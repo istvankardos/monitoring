@@ -5,8 +5,11 @@ import com.aldisued.iot.monitoring.entity.Alert;
 import com.aldisued.iot.monitoring.repository.AlertRepository;
 import com.aldisued.iot.monitoring.repository.SensorRepository;
 import java.util.UUID;
+
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AlertService {
@@ -27,8 +30,11 @@ public class AlertService {
     return null;
   }
 
+  @Transactional(readOnly = true)
   public AlertDto findLastAlertBySensorId(UUID sensorId) {
-    // TODO: Task 5
-    return null;
+    return alertRepository.findFirstBySensorIdOrderByTimestampDesc(sensorId)
+            .map(AlertDto::from)
+            .orElseThrow(() -> new EntityNotFoundException(
+                    "No alerts found for sensor with id: " + sensorId));
   }
 }
