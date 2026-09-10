@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface SensorReadingRepository extends JpaRepository<SensorReading, String> {
@@ -17,6 +18,17 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, St
             AND sr.timestamp BETWEEN :from AND :to
             """)
     Optional<Double> findAverageValueBySensorTypeAndPeriod(
+            @Param("type") SensorType type,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query("""
+            SELECT sr.value FROM SensorReading sr
+            WHERE sr.sensor.type = :type
+            AND sr.timestamp BETWEEN :from AND :to
+            ORDER BY sr.timestamp
+            """)
+    List<Double> findAllValuesBySensorTypeAndPeriod(
             @Param("type") SensorType type,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
