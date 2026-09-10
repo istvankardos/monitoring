@@ -2,6 +2,7 @@ package com.aldisued.iot.monitoring.service;
 
 import com.aldisued.iot.monitoring.dto.AlertDto;
 import com.aldisued.iot.monitoring.entity.Alert;
+import com.aldisued.iot.monitoring.entity.Sensor;
 import com.aldisued.iot.monitoring.repository.AlertRepository;
 import com.aldisued.iot.monitoring.repository.SensorRepository;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public class AlertService {
   private final SensorRepository sensorRepository;
   private final KafkaTemplate<String, AlertDto> kafkaTemplate;
 
+  private static final String ALERTS_TOPIC = "alerts";
+
   public AlertService(AlertRepository alertRepository, SensorRepository sensorRepository,
       KafkaTemplate<String, AlertDto> kafkaTemplate) {
     this.alertRepository = alertRepository;
@@ -25,9 +28,15 @@ public class AlertService {
     this.kafkaTemplate = kafkaTemplate;
   }
 
+  @Transactional
   public Alert saveAlert(AlertDto alertDto) {
-    // TODO: Task 6
-    return null;
+    Sensor sensor = sensorRepository.findById(alertDto.sensorId())
+            .orElseThrow(() -> new EntityNotFoundException("Sensor not found with ID: " + alertDto.sensorId()));
+
+    Alert alert = alertRepository.save(new Alert(alertDto.message(), alertDto.timestamp(), sensor));
+
+    kafkaTemplate.send(ALERTS_TOPIC, AlertDto.from(alert));
+    return alert;
   }
 
   @Transactional(readOnly = true)
